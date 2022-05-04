@@ -24,6 +24,7 @@ int newBus::af = 8;
 
 using namespace std;
 
+enum direction {le, ri, up, down, front, back};
 char numarr[10] = {'0','1','2','3','4','5','6','7','8','9'};
 
 int mystoi(string s){
@@ -37,7 +38,8 @@ int mystoi(string s){
     return r;
 }
 
-void printv(vector<int> v) {
+template <typename T>
+void printv(vector<T> v) {
     int s = v.size();
     for (int i = 0; i < s; i++) {
         cout << v[i] << ' ';
@@ -45,7 +47,8 @@ void printv(vector<int> v) {
     cout << endl;
 }
 
-void printvp(vector<pair<int, int> >vp) {
+template <typename T1, typename T2>
+void printvp(vector<pair<T1, T2> >vp) {
     int s = vp.size();
     for (int i = 0; i < s; i++) {
         cout << vp[i].first << ' '<< vp[i].second << '\t';
@@ -732,8 +735,8 @@ vector<pair<int,pair<int, int> > > astar(grid a) {
         grid t = p.top();
         auto tp = make_pair(t.l,make_pair(t.x,t.y));
         p.pop();
-        cout <<t.l << " " << t.x << " " << t.y << " " << t.c << endl;
-        cout << t.dl << " " << t.dx << " " << t.dy << " " << t.f<<  endl;
+        // cout <<t.l << " " << t.x << " " << t.y << " " << t.c << endl;
+        // cout << t.dl << " " << t.dx << " " << t.dy << " " << t.f<<  endl;
         auto vg = getRelatedGrids(t);
         for (auto gr: vg) {
             auto pa = make_pair(gr.l, make_pair(gr.x,gr.y));
@@ -806,6 +809,32 @@ pair<int,int> findPinxy (pin p) {
     assert(1 == 0);
 }
 
+vector<direction> topologyAnalyses(vector<pair<int,pair<int, int> > > v) {
+    vector<direction> ret;
+    int s = v.size();
+    for (int i = 0; i < s -1; ++i) {
+        direction cur;
+        if (v[i+1].first > v[i].first) {
+            cur = front;
+        } else if (v[i+1].first < v[i].first) {
+            cur = back;
+        } else if (v[i+1].second.first > v[i].second.first) {
+            cur = ri;
+        } else if (v[i+1].second.first < v[i].second.first) {
+            cur = le;
+        } else if (v[i+1].second.second > v[i].second.second) {
+            cur = up;
+        } else if (v[i+1].second.second < v[i].second.second) {
+            cur = down;
+        } else {
+            assert(false);
+        }
+        ret.push_back(cur);
+    }
+    return ret;
+}
+
+map<vector<direction>, int> topologySet;
 
 void generateGuides() {
     int c = 0;
@@ -813,21 +842,40 @@ void generateGuides() {
         cout << ++c << endl;
         auto nb = newBuses.top();
         newBuses.pop();
-        int k = 1;
-        // vector<int> v = randomk(k, nb.pins.size());
-        vector<int> v(1, 0);
+        // int k = 1;
+        // vector<int> v(1, 0);
+        int k = min(nb.nb, max(10,min(50,nb.nb/4)));
+        vector<int> v = randomk(k, nb.pins.size());
+        topologySet.clear();
+        
         for (auto i: v) {
             auto p0 = findPinxy(nb.pins[i][0]);
             auto p1 = findPinxy(nb.pins[i][1]);
             grid g(nb.pins[i][0].layername, p0.first, p0.second,nb.pins[i][1].layername, p1.first, p1.second,0);
-            cout << p0.first << " " << p0.second << endl;
-            cout << p1.first << " " << p1.second << endl;
-            auto v = astar(g);
-            for (auto i: v) {
-                cout << i.first << ' ' << i.second.first << ' ' << i.second.second << endl;
+            // cout << p0.first << " " << p0.second << endl;
+            // cout << p1.first << " " << p1.second << endl;
+            auto vv = astar(g);
+            // for (auto ii: vv) {
+            //     cout << ii.first << ' ' << ii.second.first << ' ' << ii.second.second << endl;
+            // }
+            // cout << endl << endl;
+            auto ta = topologyAnalyses(vv);
+            for (auto ii : ta) {
+                cout << ii << ' ';
             }
-            cout << endl << endl;
+            cout << endl;
+            auto it = topologySet.find(ta);
+            if (it == topologySet.end()) {
+                topologySet[ta] = 1;
+            } else {
+                ++topologySet[ta];
+            }
         }
+        for (auto it = topologySet.begin(); it != topologySet.end(); ++it) {
+            printv(it->first);
+            cout << it->second << endl;
+        }
+        cout << endl;
     }
 }
 
@@ -844,17 +892,17 @@ int main(int argc, char** argv) {
     int cnt = 0;
     cout << tracks.size() << endl;
     cout << dtracks.size() << endl;
-    for (auto aaa : dtracks) {
-        cout << aaa.size() << endl;
-        for (auto aa : aaa) {
-            cout << aa.size() << ' ';
-            cout << aa[0].l.x1 << ' ' << aa[0].l.y1 << endl;
-            cout << aa[1].l.x1 << ' ' << aa[1].l.y1 << endl;
-            cnt += aa.size();
-        }
-        cout << endl;
-    }
-    cout << endl;
+    // for (auto aaa : dtracks) {
+    //     cout << aaa.size() << endl;
+    //     for (auto aa : aaa) {
+    //         cout << aa.size() << ' ';
+    //         cout << aa[0].l.x1 << ' ' << aa[0].l.y1 << endl;
+    //         cout << aa[1].l.x1 << ' ' << aa[1].l.y1 << endl;
+    //         cnt += aa.size();
+    //     }
+    //     cout << endl;
+    // }
+    // cout << endl;
 
     getSuperBus();
     getSuperBusPins3();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "coordinates.h"
+#include <vector>
 
 struct track{
     int layername;
