@@ -8,7 +8,9 @@ using namespace std;
 struct pin{
     int layername;
     rectangle r;
-    pin(int s, int a, int b, int c, int d) : layername(s), r(a,b,c,d) {};
+    string name;
+    bool reverse;
+    pin(int s, int a, int b, int c, int d, string name, bool reverse = false) : layername(s), r(a,b,c,d), name(name),reverse(reverse) {};
 };
 
 struct bus{
@@ -17,7 +19,9 @@ struct bus{
     vector<vector<pin> > pins;
     vector<bool> xsame;
     vector<bool> LSB;
-    bus(int nb, int np, vector<int> widths, vector<vector<pin> > pins):nb(nb), np(np), widths(widths),pins(pins){
+    string name;
+    
+    bus(int nb, int np, vector<int> widths, vector<vector<pin> > pins, string name) : nb(nb), np(np), widths(widths),pins(pins),name(name) {
         int l = pins[0].size();
         xsame.resize(l);
         LSB.resize(l);

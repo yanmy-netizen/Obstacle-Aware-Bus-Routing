@@ -79,7 +79,7 @@ vector<vector<vector<pair<int, int> > > > superBusPins;
 
 vector<vector<int> > sBus;
 
-map<pair<int, int>, vector<pair<int,pair<int, int>>>> final_path;
+map<pair<int, pair<int, int>>, vector<pair<int,pair<int, int>>>> final_path;
 
 struct cmp1{
     bool operator()(const newBus l, const newBus r) const {
@@ -193,23 +193,24 @@ void readInput () {
         cin >> s;
         vector<vector<pin> > pinss;
         for (int j = 0; j < nb; ++j) {
-            cin >> s >> s;
+            string pinname;
+            cin >> s >> pinname;
             {
                 vector<pin> pins;
                 cin >> ss[0] >> ss[1] >> ss[2] >> ss[3] >> ss[4];
                 cin >> sss[0] >> sss[1] >> sss[2] >> sss[3] >> sss[4];
                 if (NameToLayer[ss[0]] < NameToLayer[sss[0]]) {
-                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4])));
-                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4])));
+                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4]), pinname));
+                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4]), pinname));
                 } else if (NameToLayer[ss[0]] > NameToLayer[sss[0]]) {
-                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4])));
-                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4])));
+                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4]), pinname, true));
+                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4]), pinname, true));
                 } else if (mystoi(ss[1]) < mystoi(sss[1]) || (mystoi(ss[1]) == mystoi(sss[1]) && mystoi(ss[2]) < mystoi(sss[2]))) {
-                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4])));
-                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4])));                    
+                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4]), pinname));
+                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4]), pinname));                    
                 } else {
-                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4])));
-                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4])));                    
+                    pins.push_back(pin(NameToLayer[sss[0]], mystoi(sss[1]), mystoi(sss[2]), mystoi(sss[3]), mystoi(sss[4]), pinname, true));
+                    pins.push_back(pin(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4]), pinname, true));                    
                 }
                 pinss.push_back(pins);
                     // snumx.insert(mystoi(ss[1]));
@@ -223,7 +224,7 @@ void readInput () {
             }
             cin >> s;
         }
-        buses.push_back(bus(nb, np, nwv, pinss));
+        buses.push_back(bus(nb, np, nwv, pinss, busname));
         cin >> s;
     }
     cin >> s;
@@ -891,6 +892,42 @@ pair<int,int> findPinxy (pin p) {
     assert(1 == 0);
 }
 
+pair<int,int> findPathxy (pin p) {
+    int l = p.layername;
+    if (layers[l].xsame) {
+        int x = (p.r.x1 + p.r.x2) / 2;
+        for (auto &ts : dtracks[l]) {
+            if (ts[0].l.y1 != p.r.y1 && ts[0].l.y2 != p.r.y2) {
+                continue;
+            }
+            int b = binary_search_x(ts, x);
+            if (b != -1) {
+                if (ts[0].l.y1 == p.r.y1) {
+                    return make_pair(x, p.r.y2);
+                } else {
+                    return make_pair(x, p.r.y1);
+                }
+            }
+        }
+    } else {
+        int y = (p.r.y1 + p.r.y2) / 2;
+        for (auto &ts : dtracks[l]) {
+            if (ts[0].l.x1 != p.r.x1 && ts[0].l.x2 != p.r.x2) {
+                continue;
+            }
+            int b = binary_search_y(ts, y);
+            if (b != -1) {
+                if (ts[0].l.x1 == p.r.x1) {
+                    return make_pair(p.r.x2, y);
+                } else {
+                    return make_pair(p.r.x1, y);
+                }
+            }
+        }        
+    }
+    assert(1 == 0);
+}
+
 vector<direction> topologyAnalyses(vector<pair<int,pair<int, int> > > v) {
     vector<direction> ret;
     int s = v.size();
@@ -1046,7 +1083,10 @@ void generateSinglePath(newBus nb, vector<direction> ta){
                 int x = vv[cl].second.first;
                 pin0_path.push_back(make_pair(vv[cj -1].first, make_pair(x, y)));
                 for (int j = 0; j < li; ++j) {
-                    pin0_path.push_back(make_pair(vv[cj+j].first, make_pair(x, vv[cj + j].second.second)));
+                    if (j == 0)
+                        pin0_path.push_back(make_pair(vv[cj+j].first, make_pair(x, y)));
+                    else
+                        pin0_path.push_back(make_pair(vv[cj+j].first, make_pair(x, vv[cj + j].second.second)));
                     if (j != li - 1) {
                         if (j == 0 || dvtrack[i][j -1] != dvtrack[i][j]) {
                             pin0_patht.push_back(dvtrack[i][j]);
@@ -1058,7 +1098,10 @@ void generateSinglePath(newBus nb, vector<direction> ta){
                 int y = vv[cl].second.second;
                 pin0_path.push_back(make_pair(vv[cj -1].first, make_pair(x, y)));
                 for (int j = 0; j < li; ++j) {
-                    pin0_path.push_back(make_pair(vv[cj+j].first, make_pair(vv[cj + j].second.first, y)));
+                    if (j == 0)
+                        pin0_path.push_back(make_pair(vv[cj+j].first, make_pair(x, y)));
+                    else
+                        pin0_path.push_back(make_pair(vv[cj+j].first, make_pair(vv[cj + j].second.first, y)));
                     if (j != li - 1) {
                         if (j == 0 || dvtrack[i][j -1] != dvtrack[i][j]) {
                             pin0_patht.push_back(dvtrack[i][j]);
@@ -1167,7 +1210,6 @@ void generateSinglePath(newBus nb, vector<direction> ta){
                 }
                 assert(found);
             } else {
-
                 bool found = false;
                 int mid_j = get<2>(dvtrack[i][0]);
                 int min_j = 0;
@@ -1269,67 +1311,230 @@ void generateSinglePath(newBus nb, vector<direction> ta){
         }
         cl += li;
     }
-    final_path[make_pair(vv[0].second.first, vv[0].second.second)] = pin0_path;
+    final_path[vv[0]] = pin0_path;
     
-    for (auto ii : pin0_path) {
-        cout << ii.first << " " << ii.second.first << " " << ii.second.second << endl;
-    }
-    for (auto ii : pin0_patht) {
-        cout << get<0>(ii) << " " << get<1>(ii) << " " << get<2>(ii) << endl;
-    }
+    // for (auto ii : pin0_path) {
+    //     cout << ii.first << " " << ii.second.first << " " << ii.second.second << endl;
+    // }
+    // for (auto ii : pin0_patht) {
+    //     cout << get<0>(ii) << " " << get<1>(ii) << " " << get<2>(ii) << endl;
+    // }
     add_use(pin0_path, pin0_patht);
-    for (int i = 1; i < snb; ++i) {
-        auto xy1 = findPinxy(nb.pins[i][0]);
-        auto xy2 = findPinxy(nb.pins[i][1]);
-        pin1_path.push_back(make_pair(nb.pins[i][0].layername, xy1));
+    for (int ii = 1; ii < snb; ++ii) {
+        auto xy1 = findPinxy(nb.pins[ii][0]);
+        auto xy2 = findPinxy(nb.pins[ii][1]);
         auto vvpp0 = v2vv(pin0_path);
-        decltype(vvpp0) vvpp1;
         auto vvt0 = v2vv(pin0_patht);
-        decltype(vvt0) vvt1;
         cl = 0;
         int x = xy1.first;
         int y = xy1.second;
         for (int i = 0; i < sd; ++i) {
             auto cur_vpp = vvpp0[i];
-            auto cur_vt = vvpp0[i];
+            auto cur_vt = vvt0[i];
             int cur_layer = cur_vpp[0].first;
             int li = cur_vpp.size();
             if (i == 0) {
                 if (layers[cur_layer].xsame) {
-                    for (int i = 0; i < li-1; ++i) {
-                        pin1_path.push_back(make_pair(cur_layer, make_pair(x, cur_vpp[i].second.second)));
-                        auto b = binary_search_x(dvtrack[cur_layer][get<1>(cur_vt[i])], x);
-                        pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[i]),b));
+                    for (int j = 0; j < li; ++j) {
+                        pin1_path.push_back(make_pair(cur_layer, make_pair(x, cur_vpp[j].second.second)));
+                        auto b = binary_search_x(dtracks[cur_layer][get<1>(cur_vt[j])], x);
+                        pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
                     }
                     y = cur_vpp[li-1].second.second;
                 } else {
-                    for (int i = 0; i < li-1; ++i) {
-                        pin1_path.push_back(make_pair(cur_layer, make_pair(cur_vpp[i].second.first, y)));
-                        auto b = binary_search_y(dvtrack[cur_layer][get<1>(cur_vt[i])], y);
-                        pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[i]),b));
+                    for (int j = 0; j < li-1; ++j) {
+                        pin1_path.push_back(make_pair(cur_layer, make_pair(cur_vpp[j].second.first, y)));
+                        auto b = binary_search_y(dtracks[cur_layer][get<1>(cur_vt[j])], y);
+                        pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
                     }
                     x = cur_vpp[li-1].second.first;                    
                 }
             } else if (i == sd - 1) {
-
+                if (layers[cur_layer].xsame) {
+                    x = xy2.first;
+                    pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
+                    for (int j = 0; j < li; ++j) {
+                        if (j == 0) {
+                            pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
+                        } else {
+                            pin1_path.push_back(make_pair(cur_layer, make_pair(x, cur_vpp[j].second.second)));
+                        }
+                        auto b = binary_search_x(dtracks[cur_layer][get<1>(cur_vt[j])], x);
+                        pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
+                    }
+                    y = xy2.second;
+                    pin1_path.push_back(make_pair(vvpp0[i][0].first, make_pair(x, y)));
+                } else {
+                    y = xy2.second;
+                    pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
+                    for (int j = 0; j < li-1; ++j) {
+                        if (j == 0) {
+                            pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
+                        } else {
+                            pin1_path.push_back(make_pair(cur_layer, make_pair(cur_vpp[j].second.first, y)));
+                        }
+                        auto b = binary_search_y(dtracks[cur_layer][get<1>(cur_vt[j])], y);
+                        pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
+                    }
+                    x = xy2.first;     
+                    pin1_path.push_back(make_pair(vvpp0[i][0].first, make_pair(x, y)));               
+                }
             } else {
                 bool found = false;
+                int mid_j = get<2>(cur_vt[0]);
+                int min_j = -1;
+                int max_j = dtracks[cur_layer][get<1>(cur_vt[0])].size();
+                int cur_j = mid_j;
                 if (layers[cur_layer].xsame) {
-
+                    if (addj[i]) {
+                        ++cur_j;
+                        while(!found && cur_j < max_j) {
+                            x = dtracks[cur_layer][get<1>(cur_vt[0])][cur_j].l.x1;
+                            bool fail = false;
+                            for (int j = 0; j < li - 1; ++j) {
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_x(tv, x);
+                                if (b == -1 || !tv[b].can_use(cur_vpp[j].second.second, cur_vpp[j+1].second.second)) {
+                                    fail = true;
+                                    break;
+                                }
+                            }
+                            if (fail) {
+                                ++cur_j;
+                                continue;
+                            }
+                            found = true;
+                            pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
+                            for (int j = 0; j < li - 1; ++j) {
+                                if (j == 0) {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
+                                } else {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(x, cur_vpp[j].second.second)));
+                                }
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_x(tv, x);
+                                pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
+                            }
+                        }
+                    } else {
+                        --cur_j;
+                        while(!found && cur_j > min_j) {
+                            x = dtracks[cur_layer][get<1>(cur_vt[0])][cur_j].l.x1;
+                            bool fail = false;
+                            for (int j = 0; j < li - 1; ++j) {
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_x(tv, x);
+                                if (b == -1 || !tv[b].can_use(cur_vpp[j].second.second, cur_vpp[j+1].second.second)) {
+                                    fail = true;
+                                    break;
+                                }
+                            }
+                            if (fail) {
+                                --cur_j;
+                                continue;
+                            }
+                            found = true;
+                            pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
+                            for (int j = 0; j < li - 1; ++j) {
+                                if (j == 0) {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
+                                } else {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(x, cur_vpp[j].second.second)));
+                                }
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_x(tv, x);
+                                pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
+                            }
+                        }
+                    }
+                    y = cur_vpp[li-1].second.second;
                 } else {
-
+                    if (addj[i]) {
+                        ++cur_j;
+                        while(!found && cur_j < max_j) {
+                            y = dtracks[cur_layer][get<1>(cur_vt[0])][cur_j].l.y1;
+                            bool fail = false;
+                            for (int j = 0; j < li - 1; ++j) {
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_y(tv, y);
+                                if (b == -1 || !tv[b].can_use(cur_vpp[j].second.first, cur_vpp[j+1].second.first)) {
+                                    fail = true;
+                                    break;
+                                }
+                            }
+                            if (fail) {
+                                ++cur_j;
+                                continue;
+                            }
+                            found = true;
+                            pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
+                            for (int j = 0; j < li - 1; ++j) {
+                                if (j == 0) {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
+                                } else {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(cur_vpp[j].second.first, y)));
+                                }
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_y(tv, y);
+                                pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
+                            }
+                        }
+                    } else {
+                        --cur_j;
+                        while(!found && cur_j > min_j) {
+                            y = dtracks[cur_layer][get<1>(cur_vt[0])][cur_j].l.y1;
+                            bool fail = false;
+                            for (int j = 0; j < li - 1; ++j) {
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_y(tv, y);
+                                if (b == -1 || !tv[b].can_use(cur_vpp[j].second.first, cur_vpp[j+1].second.first)) {
+                                    fail = true;
+                                    break;
+                                }
+                            }
+                            if (fail) {
+                                ++cur_j;
+                                continue;
+                            }
+                            found = true;
+                            pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
+                            for (int j = 0; j < li - 1; ++j) {
+                                if (j == 0) {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
+                                } else {
+                                    pin1_path.push_back(make_pair(cur_layer, make_pair(cur_vpp[j].second.first, y)));
+                                }
+                                auto &tv = dtracks[cur_layer][get<1>(cur_vt[j])];
+                                auto b = binary_search_y(tv, y);
+                                pin1_patht.push_back(make_tuple(cur_layer,get<1>(cur_vt[j]),b));
+                            }
+                        }
+                    }
+                    x = cur_vpp[li-1].second.first;
                 }
                 assert(found);
             }
             cl += li;
         }
+        final_path[make_pair(nb.pins[ii][0].layername,xy1)] = pin1_path;
+        // for (auto iii: pin1_path) {
+        //     cout << iii.first << " " << iii.second.first << " " << iii.second.second << endl;
+        // }
+        // for (auto iii: pin1_patht) {
+        //     cout << get<0>(iii) << " " << get<1>(iii) << " " << get<2>(iii) << endl;
+        // } 
+        add_use(pin1_path, pin1_patht);
+        pin0_path = pin1_path;
+        pin0_patht = pin1_patht;
+        pin1_path.clear();
+        pin1_patht.clear();
     }
 }
 
 void generateGuides() {
     int c = 0;
     while (!newBuses.empty()) {
-        cout << ++c << endl;
+        // cout << ++c << endl;
         auto nb = newBuses.top();
         newBuses.pop();
         // int k = 1;
@@ -1370,7 +1575,48 @@ void generateGuides() {
     }
 }
 
+void printPath(){
+    int sb = buses.size();
+    for (int i = 0; i < sb; ++i) {
+        printf("BUS %s\n", buses[i].name.c_str());
+        int l = buses[i].pins.size();
+        for (int j = 0; j < l; ++j) {
+            printf("BIT %s\n", buses[i].pins[j][0].name.c_str());
+            auto xy = findPinxy(buses[i].pins[j][0]);
+            auto layername = buses[i].pins[j][0].layername;
+            auto key = make_pair(layername, xy);
+            auto v = final_path[key];
+            int s = v.size();
+            --s;
+            printf("PATH %d\n", s);
+            v[0].second = findPathxy(buses[i].pins[j][0]);
+            v[s].second = findPathxy(buses[i].pins[j][1]);
+            if (!buses[i].pins[j][0].reverse) {
+                for (int k = 0; k < s; ++k) {
+                    if (v[k].first == v[k+1].first) {
+                        printf("%s (%d %d) (%d %d)\n",layers[v[k].first].name.c_str(), v[k].second.first, v[k].second.second, v[k+1].second.first, v[k+1].second.second);
+                    } else {
+                        int minl = min(v[k].first, v[k+1].first);
+                        printf("%s (%d %d)\n",layers[minl].name.c_str(), v[k].second.first, v[k].second.second);
+                    }
+                }
+            } else {
+                for (int k = s - 1; k >= 0; --k) {
+                    if (v[k].first == v[k+1].first) {
+                        printf("%s (%d %d) (%d %d)\n",layers[v[k+1].first].name.c_str(), v[k+1].second.first, v[k+1].second.second, v[k].second.first, v[k].second.second);
+                    } else {
+                        int minl = min(v[k].first, v[k+1].first);
+                        printf("%s (%d %d)\n",layers[minl].name.c_str(), v[k].second.first, v[k].second.second);
+                    }
+                }
+            }
 
+            printf("ENDPATH\n");
+            printf("ENDBIT\n");
+        }
+        printf("ENDBUS\n");
+    }
+}
 
 int main(int argc, char** argv) {
     cout << argc << endl;
@@ -1383,8 +1629,8 @@ int main(int argc, char** argv) {
     readInput();
 
     int cnt = 0;
-    cout << tracks.size() << endl;
-    cout << dtracks.size() << endl;
+    // cout << tracks.size() << endl;
+    // cout << dtracks.size() << endl;
     // for (auto aaa : dtracks) {
     //     cout << aaa.size() << endl;
     //     for (auto aa : aaa) {
@@ -1408,4 +1654,5 @@ int main(int argc, char** argv) {
     //     cout << t.cost << endl;
     // }
     generateGuides();
+    printPath();
 }
