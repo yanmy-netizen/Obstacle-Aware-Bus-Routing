@@ -658,7 +658,8 @@ vector<track> getRelatedTracks(int l, int x1, int y1, int x2, int y2) {
     return ret;
 }
 
-track findTrack(grid g) {
+vector<track> findTrack(grid g) {
+    vector<track> ret;
     int l = g.l;
     int x = g.x;
     int y = g.y;
@@ -669,7 +670,7 @@ track findTrack(grid g) {
             }
             int b = binary_search_x(ts, x);
             if (b != -1)
-                return ts[b];
+                ret.push_back(ts[b]);
         }
     } else {
         for (auto &ts : dtracks[l]) {
@@ -678,13 +679,14 @@ track findTrack(grid g) {
             }
             int b = binary_search_y(ts, y);
             if (b != -1)
-                return ts[b];
+                ret.push_back(ts[b]);
         }        
     }
-    assert(1 == 0);
+    return ret;
 }
 
-track findTrack(int l, int x, int y) {
+vector<track> findTrack(int l, int x, int y) {
+    vector<track> ret;
     if (layers[l].xsame) {
         for (auto &ts : dtracks[l]) {
             if (ts[0].l.y1 > y || ts[0].l.y2 < y) {
@@ -692,7 +694,7 @@ track findTrack(int l, int x, int y) {
             }
             int b = binary_search_x(ts, x);
             if (b != -1)
-                return ts[b];
+                ret.push_back(ts[b]);
         }
     } else {
         for (auto &ts : dtracks[l]) {
@@ -701,10 +703,10 @@ track findTrack(int l, int x, int y) {
             }
             int b = binary_search_y(ts, y);
             if (b != -1)
-                return ts[b];
+                ret.push_back(ts[b]);
         }        
     }
-    assert(1 == 0);
+    return ret;
 }
 
 tuple<int, int, int> findTrackIdx(grid g) {
@@ -766,37 +768,39 @@ tuple<int, int, int> findTrackIdx(int l, int x, int y) {
 
 vector<grid> getRelatedGrids(grid g) {
     vector<grid> ret;
-    auto t = findTrack(g);
-    if (g.x != t.l.x1 || g.y != t.l.y1)
-        ret.push_back(grid(g.l, t.l.x1, t.l.y1, g.dl, g.dx, g.dy, g.c+abs(g.x - t.l.x1) + abs(g.y - t.l.y1)));
-    if (g.x != t.l.x2 || g.y != t.l.y2)
-        ret.push_back(grid(g.l, t.l.x2, t.l.y2, g.dl, g.dx, g.dy, g.c+abs(g.x - t.l.x2) + abs(g.y - t.l.y2)));
-    if (g.l > 0) {
-        auto a = getRelatedTracks(g.l-1, g.x, g.y);
-        if (a!= -1) {
-            ret.push_back(grid(g.l-1, g.x, g.y, g.dl, g.dx, g.dy, g.c+1));
-        }
-        auto aa = getRelatedTracks(g.l-1, t.l.x1, t.l.y1, t.l.x2, t.l.y2);
-        if (!aa.empty()) {
-            for (auto aaa: aa) {
-                auto p = getCross(aaa.l, t.l);
-                ret.push_back(grid(g.l, p.first, p.second, g.dl, g.dx, g.dy, g.c + abs(g.x - p.first) + abs(g.y - p.second)));
+    auto tl = findTrack(g);
+    for (auto &t : tl) {
+        if (g.x != t.l.x1 || g.y != t.l.y1)
+            ret.push_back(grid(g.l, t.l.x1, t.l.y1, g.dl, g.dx, g.dy, g.c+abs(g.x - t.l.x1) + abs(g.y - t.l.y1)));
+        if (g.x != t.l.x2 || g.y != t.l.y2)
+            ret.push_back(grid(g.l, t.l.x2, t.l.y2, g.dl, g.dx, g.dy, g.c+abs(g.x - t.l.x2) + abs(g.y - t.l.y2)));
+        if (g.l > 0) {
+            auto a = getRelatedTracks(g.l-1, g.x, g.y);
+            if (a!= -1) {
+                ret.push_back(grid(g.l-1, g.x, g.y, g.dl, g.dx, g.dy, g.c+1));
+            }
+            auto aa = getRelatedTracks(g.l-1, t.l.x1, t.l.y1, t.l.x2, t.l.y2);
+            if (!aa.empty()) {
+                for (auto aaa: aa) {
+                    auto p = getCross(aaa.l, t.l);
+                    ret.push_back(grid(g.l, p.first, p.second, g.dl, g.dx, g.dy, g.c + abs(g.x - p.first) + abs(g.y - p.second)));
+                }
             }
         }
-    }
-    if (g.l != layers.size() - 1) {
-        auto a = getRelatedTracks(g.l+1, g.x, g.y);
-        if (a!= -1) {
-            ret.push_back(grid(g.l+1, g.x, g.y, g.dl, g.dx, g.dy, g.c+1));
-            // cout << g.l + 1 << g.x << g.y << endl;
-            // auto ft = findTrack(grid(g.l+1, g.x, g.y, g.dl, g.dx, g.dy, g.c+1, &g));
-            // cout << ft.l.x1 << ' ' << ft.l.y1 << ' ' << ft.l.x2 << ' ' << ft.l.y2 <<endl;
-        }
-        auto aa = getRelatedTracks(g.l+1, t.l.x1, t.l.y1, t.l.x2, t.l.y2);
-        if (!aa.empty()) {
-            for (auto aaa: aa) {
-                auto p = getCross(aaa.l, t.l);
-                ret.push_back(grid(g.l, p.first, p.second, g.dl, g.dx, g.dy, g.c + abs(g.x - p.first) + abs(g.y - p.second)));
+        if (g.l != layers.size() - 1) {
+            auto a = getRelatedTracks(g.l+1, g.x, g.y);
+            if (a!= -1) {
+                ret.push_back(grid(g.l+1, g.x, g.y, g.dl, g.dx, g.dy, g.c+1));
+                // cout << g.l + 1 << g.x << g.y << endl;
+                // auto ft = findTrack(grid(g.l+1, g.x, g.y, g.dl, g.dx, g.dy, g.c+1, &g));
+                // cout << ft.l.x1 << ' ' << ft.l.y1 << ' ' << ft.l.x2 << ' ' << ft.l.y2 <<endl;
+            }
+            auto aa = getRelatedTracks(g.l+1, t.l.x1, t.l.y1, t.l.x2, t.l.y2);
+            if (!aa.empty()) {
+                for (auto aaa: aa) {
+                    auto p = getCross(aaa.l, t.l);
+                    ret.push_back(grid(g.l, p.first, p.second, g.dl, g.dx, g.dy, g.c + abs(g.x - p.first) + abs(g.y - p.second)));
+                }
             }
         }
     }
@@ -1373,7 +1377,7 @@ void generateSinglePath(newBus nb){
                 if (layers[cur_layer].xsame) {
                     x = xy2.first;
                     pin1_path.push_back(make_pair(vvpp0[i-1][0].first, make_pair(x, y)));
-                    for (int j = 0; j < li; ++j) {
+                    for (int j = 0; j < li - 1; ++j) {
                         if (j == 0) {
                             pin1_path.push_back(make_pair(cur_layer, make_pair(x, y)));
                         } else {
@@ -1612,6 +1616,7 @@ void generateGuides() {
         // }
         // cout << endl;
         // cout << c << endl;
+        // cout << "c:" << c << endl;
         generateSinglePath(nb);
     }
 }

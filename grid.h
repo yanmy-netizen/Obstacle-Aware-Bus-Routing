@@ -14,6 +14,9 @@ struct grid{
         if (x != dx) ++a; 
         if (y != dy) ++a;
         f = d + c + max(a - 1, abs(l-dl));
+        if (x!= dx && y!= dy && l == dl) {
+            ++f;
+        }
     }
 
 };
