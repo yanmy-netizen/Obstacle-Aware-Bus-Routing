@@ -8,18 +8,13 @@
 struct layer{
     int layername;
     string name;
-    bool horizontal;
     bool xsame;
     int spacing;
     set<pair<pair<int,int>, pair<int,int> > > used;
     set<pair<pair<int,int>, pair<int,int> > > temp_used;
-    layer(int layername, string name, bool horizontal, int spacing) :layername(layername), name(name), horizontal(horizontal), spacing(spacing){
-        xsame = !horizontal;
-    }
     layer(int layername, string name, string s, int spacing) :layername(layername), name(name), spacing(spacing){
-        if (s[0] == 'h') horizontal = true;
-        else horizontal = false;
-        xsame = !horizontal;
+        if (s[0] == 'h') xsame = false;
+        else xsame = true;
     }
     void add_use(pair<pair<int,int>, pair<int,int> > p) { 
         used.insert(p); 

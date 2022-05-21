@@ -16,21 +16,19 @@ struct point{
 struct line{
     int x1, x2;
     int y1, y2;
-    bool horizontal;
     bool xsame;
     line(int a = 0, int b = 0, int c = 0, int d = 0) {
         x1 = a;
         y1 = b;
         x2 = c;
         y2 = d;
-        if (a != c) horizontal = true;
-        else horizontal = false;
-        xsame = !horizontal;
+        if (a != c) xsame = false;
+        else xsame = true;
     }
 };
 
 pair<int, int> getCross(line l, line r) {
-    assert(l.horizontal != r.horizontal);
+    assert(l.xsame != r.xsame);
     if (l.xsame) return make_pair(l.x1, r.y1);
     else return make_pair(r.x1, l.y1);
 }
