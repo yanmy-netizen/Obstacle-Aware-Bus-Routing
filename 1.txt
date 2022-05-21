@@ -1,1 +1,1 @@
-cd "E:\ymy\bishe\code\algorithm" ; if ($?) { g++ main.cpp -o main -std=c++14 } ; if ($?) { .\main beta_4.input example_2.output}
+cd "E:\ymy\bishe\code\algorithm" ; if ($?) { g++ main.cpp -o main -std=c++14 } ; if ($?) { .\main beta_1.input beta_1.output}
