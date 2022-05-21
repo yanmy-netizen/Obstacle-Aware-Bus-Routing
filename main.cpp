@@ -316,6 +316,28 @@ void readInput () {
     for (int i = 0; i < nobstacles; ++i) {
         cin >> ss[0] >> ss[1] >> ss[2] >> ss[3] >> ss[4];
         obstacles.push_back(obstacle(NameToLayer[ss[0]], mystoi(ss[1]), mystoi(ss[2]), mystoi(ss[3]), mystoi(ss[4])));
+        int la = NameToLayer[ss[0]];
+        int x1 = mystoi(ss[1]);
+        int y1 = mystoi(ss[2]);
+        int x2 = mystoi(ss[3]);
+        int y2 = mystoi(ss[4]);
+        int spacing = layers[la].spacing;
+
+        if (layers[l].xsame) {
+            int start = x1 - 2*spacing;
+            while (start < x2) {
+                start += 2 * spacing;
+                if (start > x2) start = x2;
+                layers[la].add_use(start, y1, start, y2);
+            }
+        } else {
+            int start = y1 - 2*spacing;
+            while (start < y2) {
+                start += 2 * spacing;
+                if (start > y2) start = y2;
+                layers[la].add_use(x1, start, x2, start);
+            }
+        }
         // snumx.insert(mystoi(ss[1]));
         // snumy.insert(mystoi(ss[2]));
         // snumx.insert(mystoi(ss[3]));
