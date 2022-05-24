@@ -2040,11 +2040,15 @@ int main(int argc, char** argv) {
     getSBus();
 
     getnewBuses();
+    // int c = 0;
     // while(!newBuses.empty()) {
+    //     ++c;
     //     auto t = newBuses.top();
     //     newBuses.pop();
     //     cout << t.cost << endl;
     // }
+    // cout << c << endl;
+    // return 0;
     bool b = generateGuides();
     // cout << "b:" << b << endl;
     assert(b);
